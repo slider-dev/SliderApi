@@ -23,26 +23,27 @@ if (fs.existsSync(sitePath)) {
 
 if (fs.existsSync(apiPath)) {
   const files = fs.readdirSync(apiPath).filter(f => f.endsWith('.js'))
+
   for (const file of files) {
-    const routeModule = await import(`./api/${file}`)
+    const routePath = path.join(apiPath, file)
+    const routeModule = await import(`file://${routePath}`)
+
     if (routeModule.default?.path && routeModule.default?.handler) {
       app.all(routeModule.default.path, routeModule.default.handler)
     }
   }
 }
 
-try {
-  const docs = await import('./docs.js')
-  if (docs.default) app.use('/docs', docs.default)
-} catch {}
+import docsRouter from './docs.js'
+app.use('/docs', docsRouter)
 
 app.get('/', (req, res) => {
-  if (fs.existsSync(path.join(sitePath, 'index.html'))) {
-    res.sendFile(path.join(sitePath, 'index.html'))
+  const indexFile = path.join(sitePath, 'index.html')
+  if (fs.existsSync(indexFile)) {
+    res.sendFile(indexFile)
   } else {
-    res.json({ status: true, message: 'Slider Taem love you' })
+    res.json({ status: true, message: 'Slider API Running' })
   }
 })
 
 export const handler = serverless(app)
-export default app
