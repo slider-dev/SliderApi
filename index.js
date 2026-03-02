@@ -4,6 +4,9 @@ import serverless from 'serverless-http'
 import path from 'path'
 import { fileURLToPath } from 'url'
 import fs from 'fs'
+import { createRequire } from 'module'
+
+const require = createRequire(import.meta.url)
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
@@ -25,8 +28,7 @@ if (fs.existsSync(apiPath)) {
   const files = fs.readdirSync(apiPath).filter(f => f.endsWith('.js'))
 
   for (const file of files) {
-    const routePath = path.join(apiPath, file)
-    const routeModule = await import(`file://${routePath}`)
+    const routeModule = require(`./api/${file}`)
 
     if (routeModule.default?.path && routeModule.default?.handler) {
       app.all(routeModule.default.path, routeModule.default.handler)
@@ -34,7 +36,7 @@ if (fs.existsSync(apiPath)) {
   }
 }
 
-import docsRouter from './docs.js'
+const docsRouter = require('./docs.js').default
 app.use('/docs', docsRouter)
 
 app.get('/', (req, res) => {
@@ -42,7 +44,7 @@ app.get('/', (req, res) => {
   if (fs.existsSync(indexFile)) {
     res.sendFile(indexFile)
   } else {
-    res.json({ status: true, message: 'Slider API Running' })
+    res.json({ status: true })
   }
 })
 
